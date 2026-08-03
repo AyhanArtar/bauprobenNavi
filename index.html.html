@@ -1,0 +1,2864 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Bauproben – Tour Chemiepark Marl</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+* { box-sizing:border-box; }
+
+body{
+    margin:0;
+    padding:20px;
+    background:#f8fafc;
+    font-family:"Segoe UI",sans-serif;
+    color:#111827;
+}
+*{
+    box-sizing:border-box;
+}
+
+
+h1 {
+    padding:16px 20px 8px;
+    margin:0;
+    font-size:24px;
+    font-weight:600;
+    color:#111827;
+}
+
+/* Top-Bar */
+#topBar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 20px;
+
+    background:white;
+    border-radius:18px;
+    box-shadow:0 4px 18px rgba(0,0,0,.08);
+
+    margin:0 20px 20px;
+}
+@media screen and (max-width:768px){
+
+    #topBar{
+        display:block !important;
+    }
+
+    #searchWrapper{
+        width:100% !important;
+        margin-bottom:10px;
+    }
+
+    #searchBox{
+        width:100% !important;
+    }
+
+    #dayBar{
+        display:grid !important;
+        grid-template-columns:1fr 1fr !important;
+        gap:8px;
+        margin-bottom:10px;
+    }
+
+    #statsRow{
+        display:flex !important;
+        overflow-x:auto;
+    }
+
+}
+#searchWrapper{
+    width:220px;
+    position:relative;
+    order:-1;
+}
+
+
+
+/* Suchleiste links */
+#searchWrapper {
+    width:220px;
+    position:relative;
+    order:-1;
+}
+
+#searchBox {
+    width:220px;
+    padding:10px 14px 10px 36px;
+    font-size:13px;
+    border-radius:12px;
+    border:1px solid #d1d5db;
+    background:white;
+    color:#111827;
+    box-shadow:0 2px 6px rgba(0,0,0,0.06);
+    outline:none;
+    height:48px;
+}
+
+#searchBox::placeholder {
+    color:#9ca3af;
+}
+
+#searchWrapper::before {
+    content:"🔍";
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:13px;
+    opacity:0.7;
+}
+
+#searchResults {
+    display:none;
+    background:white;
+    border:1px solid #d1d5db;
+    border-radius:12px;
+    padding:6px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.12);
+    position:absolute;
+    top:40px;
+    left:0;
+    width:100%;
+    z-index:9999;
+    font-size:13px;
+    max-height:260px;
+    overflow-y:auto;
+}
+
+/* Day buttons */
+#dayBar {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    flex:1;
+}
+
+.dayButton {
+    padding:12px 20px;
+    border-radius:12px;
+    font-weight:600;
+    color:white;
+    cursor:pointer;
+    border:none;
+    font-size:14px;
+    min-height:48px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+    transition:transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.dayButton:hover {
+    transform:translateY(-1px);
+    box-shadow:0 4px 12px rgba(0,0,0,0.16);
+    opacity:0.95;
+}
+
+.dayButton{
+    background:white;
+    color:#111827;
+
+    border-radius:14px;
+    padding:12px 18px;
+
+    font-size:14px;
+    font-weight:600;
+
+    cursor:pointer;
+
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+
+    transition:
+        transform .15s ease,
+        box-shadow .15s ease,
+        background .15s ease;
+}
+.dayButton:hover{
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(0,0,0,.12);
+}
+
+.dayButton[data-day="montag"] { border:2px solid #22c55e; }
+.dayButton[data-day="dienstag"] { border:2px solid #f97316; }
+.dayButton[data-day="mittwoch"] { border:2px solid #eab308; }
+.dayButton[data-day="donnerstag"] { border:2px solid #38bdf8; }
+.dayButton[data-day="freitag"] { border:2px solid #ef4444; }
+.dayButton[data-day="endstrassen"] { border:2px solid #a855f7; }
+.dayButton[data-day="alle"] { border:2px solid #4b5563; }
+
+.dayButton.active{
+    color:white;
+    border-width:2px;
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(0,0,0,.18);
+}
+.dayButton.active[data-day="montag"]{
+    background:#22c55e;
+}
+
+.dayButton.active[data-day="dienstag"]{
+    background:#f97316;
+}
+
+.dayButton.active[data-day="mittwoch"]{
+    background:#eab308;
+}
+
+.dayButton.active[data-day="donnerstag"]{
+    background:#38bdf8;
+}
+
+.dayButton.active[data-day="freitag"]{
+    background:#ef4444;
+}
+
+.dayButton.active[data-day="endstrassen"]{
+    background:#a855f7;
+}
+
+.dayButton.active[data-day="alle"]{
+    background:#4b5563;
+}
+/* Map */
+#map {
+    flex:1;
+    height:60vh;
+    border-radius:16px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.18);
+    border:1px solid #d1d5db;
+
+}
+#mapAndSide{
+    display:flex;
+    gap:0px;
+    padding:0 20px 20px;
+    align-items:flex-start;
+}
+@media screen and (max-width:768px){
+
+    #mapAndSide{
+        display:block !important;
+        padding:0 !important;
+    }
+
+}
+
+/* Content area */
+#contentArea {
+    display:flex;
+    gap:1;
+    padding:0 20px 20px;
+    align-items:center;
+    background:#fafafa;
+    border-radius:16px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.12);
+
+    border-left:1px solid #e5e7eb;
+    border-right:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+    border-top:5px solid var(--dayColor);
+
+    overflow:hidden;
+    margin-top:-1px;
+}
+#dashboardPanel{
+    margin:0 20px 20px;
+    background:white;
+    border-radius:16px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.12);
+    overflow:hidden;
+}
+#qrSideArea{
+    width:320px;
+    flex-shrink:0;
+
+    background:transparent;
+    border:none;
+    border-left:1px solid #e5e7eb;
+
+    padding:0 15px 15px 15px;
+
+    display:flex;
+    flex-direction:column;
+
+    justify-content:center;
+}
+#qrTitle{
+    text-align:center;
+    margin:0 0 20px 0;
+}
+#tablePart1,
+#tablePart2{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:15px;
+    margin-bottom:15px;
+}
+
+#tablePart1 h4,
+#tablePart2 h4{
+    margin:0 0 10px;
+    font-size:16px;
+    font-weight:700;
+    color:#111827;
+}
+
+#qrHeader{
+    height:70px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-sizing:border-box;
+    
+    background:#fafafa;
+    border-bottom:1px solid #e5e7eb;
+
+    font-size:18px;
+    font-weight:700;
+    color:#111827;
+
+    padding:0;
+    margin-top:-14px;
+}
+#tourHeader{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    top:3px;
+    font-size:18px;
+    font-weight:700;
+    color:#111827;
+}
+    
+
+/* Panels */
+#sideArea {
+    background:transparent;
+    border:none;
+    box-shadow:none;
+    padding:0 15px 15px 15px;
+}
+
+#tableArea {
+    flex:1;
+    min-width:0 !important;
+    padding:0 16px 16px;
+
+    background:transparent;
+    border-radius:0;
+    box-shadow:none;
+}
+#tableHeader{
+    height:70px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-sizing:border-box;
+    background:#fafafa;
+    margin:-14px -16px 0 -16px;
+    border-bottom:1px solid #e5e7eb;
+    padding:0;
+}
+#resetProgressBtn{
+    background:white;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+
+    box-shadow:0 4px 18px rgba(0,0,0,.08);
+
+    padding:12px 16px;
+
+    color:#111827;
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.15s;
+}
+#resetProgressBtn{
+    border-top:5px solid var(--dayColor);
+    cursor:pointer;
+}
+#resetProgressBtn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 20px rgba(0,0,0,.12);
+}
+
+#legend{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+    width:220px;
+    min-width:220px;
+    margin-left:40px;
+    margin-right:20px;
+}
+#legend h3{
+    background:white;
+
+    border-radius:12px;
+
+    padding:12px;
+
+    margin-bottom:16px;
+
+    text-align:center;
+
+    font-size:16px;
+    font-weight:700;
+
+    color:#111827;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+
+    border-top:4px solid #111827;
+}
+#tourTitle{
+    text-align:center;
+    font-size:24px;
+    font-weight:700;
+    margin:0;
+}
+#appTitle{
+    font-size:28px;
+    font-weight:700;
+    color:#111827;
+
+    margin:0 0 14px 6px;
+}
+#tourSubtitle{
+    margin-top:6px;
+    color:#6b7280;
+    font-size:14px;
+}
+#sideArea{
+    width:300px;
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+    height:60vh;
+}
+#stationName{
+    font-size:24px;
+    font-weight:700;
+    color:#111827;
+    margin-bottom:6px;
+}
+#stationHeader{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#6b7280;
+    margin-bottom:16px;
+    font-weight:600;
+    text-align:center;
+}
+#stationNameRow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+#hintBtn{
+    margin-left:auto;
+
+    padding:6px 12px;
+
+    background:#fff8e1;
+    border:2px solid #f59e0b;
+    border-radius:10px;
+
+    color:#d97706;
+
+    font-size:13px;
+    font-weight:700;
+
+    cursor:pointer;
+}
+#hintBtn:hover{
+    background:#fef3c7;
+}
+#resetProgressBtn{
+    position:relative;
+    overflow:hidden;
+}
+#stationHintBox{
+    margin:6px 0;
+    padding:6px 8px;
+
+    background:#fff8e1;
+
+    border-left:3px solid #f59e0b;
+    border-radius:8px;
+}
+
+#stationHintTitle{
+    font-size:11px;
+    font-weight:700;
+    margin-bottom:2px;
+}
+
+#stationHints{
+    font-size:12px;
+    line-height:1.2;
+}
+
+#resetFill{
+    position:absolute;
+    left:0;
+    bottom:0;
+    height:100%;
+    width:0%;
+    background:var(--dayColor);
+    opacity:0.18;
+    transition:none;
+    pointer-events:none;
+}
+
+/* Panel headings */
+#tableArea h3, #sideArea h3 {
+    margin:0 0 10px;
+    font-size:15px;
+    font-weight:600;
+    color:#111827;
+}
+#mapAndSide{
+    position:relative;
+}
+
+#weatherOverlay{
+    position:absolute;
+    top:210px;
+    left:35px;
+
+
+
+    z-index:9999;
+
+    width:230px;
+
+    background:rgba(255,255,255,0.88);
+
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+
+    border-radius:20px;
+
+    padding:16px;
+
+    border:1px solid rgba(255,255,255,0.6);
+
+    box-shadow:
+        0 8px 32px rgba(0,0,0,0.18);
+
+    color:#111827;
+
+    transition:all .2s ease;
+}
+#weatherOverlay:hover{
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 12px 36px rgba(0,0,0,0.22);
+}
+/* Table */
+table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+    color:#111827;
+    margin-left:16px;
+    
+}
+
+th, td {
+    padding:10px 12px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:center;
+    vertical-align:middle;
+
+}
+tbody tr:nth-child(even){
+    background:#f8fafc;
+}
+
+tbody tr:hover{
+    background:#eef6ff;
+    transition:.15s;
+}
+th {
+    background:#f8fafc;
+    color:#374151;
+    border-bottom:1px solid #e5e7eb;
+    position:sticky;
+    top:0;
+    z-index:1;
+}
+
+/* Total row */
+tfoot th {
+    background:#f3f4f6;
+    border-top:1px solid #e5e7eb;
+}
+
+/* QR */
+#qrImage {
+    width:100%;
+    max-width:320px;
+    height:auto;
+    border:1px solid #e5e7eb;
+    padding:10px;
+    background:white;
+    border-radius:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.12);
+}
+
+/* Legend */
+.legendItem{
+    width:100%;
+    margin:0;
+    padding:10px 14px;
+    margin-bottom:12px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    border-radius:12px;
+
+    font-size:14px;
+    font-weight:600;
+}
+.legendItem[data-day="montag"]{
+    border:2px solid #22c55e;
+}
+
+.legendItem[data-day="dienstag"]{
+    border:2px solid #f97316;
+}
+
+.legendItem[data-day="mittwoch"]{
+    border:2px solid #eab308;
+}
+
+.legendItem[data-day="donnerstag"]{
+    border:2px solid #38bdf8;
+}
+
+.legendItem[data-day="freitag"]{
+    border:2px solid #ef4444;
+}
+
+.legendItem[data-day="endstrassen"]{
+    border:2px solid #a855f7;
+}
+.legendItem:hover{
+    transform:translateY(-2px);
+
+    box-shadow:0 8px 20px rgba(0,0,0,.12);
+}
+
+.legendItem.active{
+    color:white;
+
+    transform:translateY(-2px);
+
+    box-shadow:0 10px 22px rgba(0,0,0,.18);
+}
+.legendItem[data-day="montag"].active{
+    background:#22c55e;
+}
+
+.legendItem[data-day="dienstag"].active{
+    background:#f97316;
+}
+
+.legendItem[data-day="mittwoch"].active{
+    background:#eab308;
+}
+
+.legendItem[data-day="donnerstag"].active{
+    background:#38bdf8;
+}
+
+.legendItem[data-day="freitag"].active{
+    background:#ef4444;
+}
+
+.legendItem[data-day="endstrassen"].active{
+    background:#a855f7;
+}
+
+.colorBox{
+    display:none;
+}
+
+
+/* Search results items */
+#searchResults div {
+    padding:6px 8px;
+    border-radius:10px;
+    margin-bottom:4px;
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    color:#111827;
+    cursor:pointer;
+    transition:background 0.12s ease, transform 0.12s ease;
+}
+
+#searchResults div:hover {
+    background:#e5e7eb;
+    transform:translateY(-1px);
+}
+
+/* Leaflet popup hell */
+.leaflet-popup-content-wrapper {
+    background:white;
+    border-radius:10px;
+    border:1px solid #e5e7eb;
+}
+
+.leaflet-popup-content {
+    margin:10px;
+    font-size:13px;
+    color:#111827;
+}
+.detailGrid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:12px;
+    padding:12px;
+}
+
+.detailGrid select{
+    width:100%;
+    padding:6px;
+}
+
+.detailGrid label{
+    font-size:12px;
+    font-weight:600;
+}
+
+#statsRow{
+    display:flex;
+    gap:10px;
+    margin-left:15px;
+    align-items:center;
+}
+
+.allMode .statCard{
+    border-top:4px solid #111827 !important;
+}
+
+.statCard{
+    width:170px;
+    min-width:170px;
+    background:white;
+    border-radius:12px;
+    padding:10px;
+    box-shadow:0 4px 12px rgba(0,0,0,.08);
+    border-top:4px solid var(--dayColor, #22c55e);
+    text-align:center;
+    min-height:70px;
+}
+
+.statTitle{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#6b7280;
+}
+.statValue{
+    font-size:24px;
+    font-weight:700;
+    color:#111827;
+    line-height:1.1;
+}
+/* Mobile */
+@media screen and (max-width:768px){
+
+    *{
+        box-sizing:border-box;
+    }
+
+    body{
+        padding:8px;
+        overflow-x:hidden;
+    }
+
+    #topBar{
+        display:flex !important;
+        flex-direction:column !important;
+        align-items:stretch !important;
+        gap:10px;
+        padding:12px;
+        margin:0 0 10px 0;
+    }
+
+    #searchWrapper{
+        width:100% !important;
+        order:0 !important;
+    }
+
+    #searchBox{
+        width:100% !important;
+    }
+
+    #dayBar{
+        display:grid !important;
+        grid-template-columns:1fr 1fr !important;
+        gap:8px;
+        width:100%;
+    }
+
+    .dayButton{
+        width:100% !important;
+        padding:12px !important;
+        min-height:48px !important;
+    }
+
+    #statsRow{
+        display:flex !important;
+        overflow-x:auto;
+        gap:8px;
+        margin:0 !important;
+        padding-bottom:6px;
+        scrollbar-width:none;
+    }
+
+    #statsRow::-webkit-scrollbar{
+        display:none;
+    }
+
+    .statCard{
+        width:130px !important;
+        min-width:130px !important;
+        flex-shrink:0;
+    }
+
+    #dashboardPanel{
+        margin:0;
+    }
+
+    #mapAndSide{
+        display:flex !important;
+        flex-direction:column !important;
+        padding:0 !important;
+        gap:10px;
+    }
+
+    #map{
+    width:100% !important;
+    height:300px !important;
+    min-height:300px !important;
+}
+
+    #sideArea{
+        width:100% !important;
+        min-width:0 !important;
+        height:auto !important;
+        display:block !important;
+        margin:0 !important;
+        padding:0 !important;
+    }
+
+    #stationCard{
+        width:100% !important;
+        height:auto !important;
+    }
+
+    #stationName{
+        font-size:24px !important;
+    }
+
+    #stationNameRow{
+        flex-wrap:wrap;
+    }
+
+    #hintBtn{
+        margin-left:0;
+    }
+
+    #stationCall,
+    #stationNavigation,
+    #completeBtn{
+        width:100%;
+    }
+ 
+   #weatherOverlay{
+    width:120px !important;
+    left:5px !important;
+    top:5px !important;
+    padding:8px !important;
+    transform:scale(.8);
+    transform-origin:top left;
+   }
+
+    #contentArea{
+        display:flex !important;
+        flex-direction:column !important;
+        padding:0 !important;
+        gap:10px;
+    }
+
+    #tableArea{
+        width:100% !important;
+        min-width:0 !important;
+        overflow-x:auto;
+        padding:0 !important;
+    }
+
+    #tableHeader{
+        margin:0 !important;
+    }
+
+    table{
+    min-width:100% !important;
+    }
+
+
+  #qrSideArea{
+    display:none !important;
+}
+
+
+    #legend{
+        display:none !important;
+    }
+
+    .detailGrid{
+        grid-template-columns:1fr 1fr !important;
+        gap:8px;
+    }
+
+    .detailGrid select{
+        width:100%;
+    }
+
+    #tablePart1,
+    #tablePart2{
+        width:100%;
+    }
+
+    img{
+        max-width:100%;
+        height:auto;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+
+
+<div id="topBar">
+
+    <!-- Suchleiste LINKS -->
+    <div id="searchWrapper">
+        <input id="searchBox" type="text" placeholder="Suche…">
+        <div id="searchResults"></div>
+    </div>
+
+    <!-- Wochentage -->
+    <div id="dayBar">
+        <button class="dayButton" data-day="montag">Montag</button>
+        <button class="dayButton" data-day="dienstag">Dienstag</button>
+        <button class="dayButton" data-day="mittwoch">Mittwoch</button>
+        <button class="dayButton" data-day="donnerstag">Donnerstag</button>
+        <button class="dayButton" data-day="freitag">Freitag</button>
+        <button class="dayButton" data-day="endstrassen">Endstraßen</button>
+        <button class="dayButton" data-day="alle">Alle</button>
+    </div>
+    
+    <div id="statsRow">
+
+    <div class="statCard">
+        <div class="statTitle">Stationen</div>
+        <div class="statValue" id="stationCount">0</div>
+    </div>
+
+    <div class="statCard">
+        <div class="statTitle">Gesamtdistanz</div>
+        <div class="statValue" id="distanceTotal">0 km</div>
+    </div>
+
+    <div class="statCard">
+        <div class="statTitle">Geschätzte Dauer</div>
+        <div class="statValue" id="tourDuration">0 min</div>
+    </div>
+
+    <div class="statCard">
+        <div class="statTitle">Fortschritt</div>
+        <div class="statValue" id="tourProgress">0 / 0</div>
+    </div>
+<div class="statCard" id="resetProgressBtn">
+
+    <div id="resetFill"></div>
+
+    <div class="statTitle">
+
+    </div>
+
+    <div class="statValue">
+       
+    </div>
+
+    <div>
+        Fortschritt zurücksetzen
+    </div>
+</div>
+
+</div>
+</div>
+<div id="dashboardPanel">
+<div id="mapAndSide">
+
+    <div id="map">
+        <div id="weatherOverlay">
+            <div id="weatherBox">
+                Wetter wird geladen...
+            </div>
+        </div>
+    </div>
+
+    <div id="sideArea">
+
+      <div id="stationCard"
+     style="
+        background:white;
+        border-radius:16px;
+        padding:16px;
+        box-shadow:0 2px 10px rgba(0,0,0,0.08);
+        height:100%;
+        border-top:5px solid var(--dayColor,#22c55e);
+     ">
+
+  <div id="stationHeader">
+    Aktuelle Station
+</div>
+
+<div id="stationNameRow">
+
+    <div id="stationNameRow">
+
+    <div id="stationName"></div>
+
+    <span id="hintBtn" style="display:none;">
+        ⚠ Hinweise anklicken
+    </span>
+
+</div>
+
+</div>
+
+<div id="stationHint"
+     style="
+        margin-top:12px;
+        color:#6b7280;
+        font-size:14px;
+     ">
+    Nutze die Suche oder wähle einen Marker auf der Karte.
+</div>
+
+<div id="stationBetrieb"
+     style="
+        background:#f8fafc;
+        padding:10px 12px;
+        border-radius:10px;
+        margin-top:10px;
+     ">
+</div>
+
+<div id="stationAnlage"
+     style="
+        background:#f8fafc;
+        padding:10px 12px;
+        border-radius:10px;
+        margin-top:8px;
+     ">
+</div>
+
+<div id="stationTelefon"
+     style="
+        background:#f8fafc;
+        padding:10px 12px;
+        border-radius:10px;
+        margin-top:8px;
+     ">
+</div>
+
+
+            <a id="stationCall"
+               href="#"
+               target="_blank"
+               style="
+                    display:block;
+                    text-align:center;
+                    padding:12px;
+                    background:#22c55e;
+                    color:white;
+                    text-decoration:none;
+                    border-radius:12px;
+                    font-weight:700;
+                    margin-top:10px;
+               ">
+                📞 Anrufen
+            </a>
+
+          <div style="
+    display:flex;
+    justify-content:center;
+    margin-top:15px;
+    ">
+                <img id="stationQr"
+              src=""
+              style="
+              width:120px;
+              height:120px;
+
+                     ">
+            </div>
+
+            <a id="stationNavigation"
+               href="#"
+               target="_blank"
+               style="
+                    display:block;
+                    text-align:center;
+                    padding:12px;
+                    background:#22c55e;
+                    color:white;
+                    text-decoration:none;
+                    border-radius:12px;
+                    font-weight:700;
+                    margin-top:10px;
+               ">
+                🧭 Navigation starten
+            </a><br>
+
+
+
+<button id="completeBtn"
+        style="
+            display:none;
+            width:100%;
+            text-align:center;
+            padding:12px;
+            background:#22c55e;
+            color:white;
+            border:none;
+            border-radius:12px;
+            font-weight:700;
+            margin-top:10px;
+            cursor:pointer;
+
+        ">
+    ✅ Probe gezogen
+</button>
+</div>   <!-- stationCard -->
+        </div>
+	
+            
+        <div id="legend"
+             style="margin-top:14px; display:none;">
+
+            <h3>Legende</h3>
+
+            <div class="legendItem" data-day="montag">
+                <span class="colorBox" style="background:#22c55e;"></span>
+                Montag
+            </div>
+
+            <div class="legendItem" data-day="dienstag">
+                <span class="colorBox" style="background:#f97316;"></span>
+                Dienstag
+            </div>
+
+            <div class="legendItem" data-day="mittwoch">
+                <span class="colorBox" style="background:#eab308;"></span>
+                Mittwoch
+            </div>
+
+            <div class="legendItem" data-day="donnerstag">
+                <span class="colorBox" style="background:#38bdf8;"></span>
+                Donnerstag
+            </div>
+
+            <div class="legendItem" data-day="freitag">
+                <span class="colorBox" style="background:#ef4444;"></span>
+                Freitag
+            </div>
+
+            <div class="legendItem" data-day="endstrassen">
+                <span class="colorBox" style="background:#a855f7;"></span>
+                Endstraßen
+
+
+        </div>
+
+    </div>
+
+</div>
+<div id="contentArea">
+
+    <div id="tableArea">
+
+<div id="tableHeader">
+    <div id="tourHeader">
+    MONTAG TOUR
+</div>
+    <div id="tourSubtitle"></div>
+</div>
+
+   
+    <table id="distTable" style="display:table;">
+
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Bau</th>
+                <th>Betrieb</th>
+                <th>Anlage</th>
+                <th>Telefon</th>
+                
+            </tr>
+        </thead>
+
+        <tbody></tbody>
+
+        
+        
+    </table>
+
+</div>
+
+<div id="qrSideArea"></div>
+</div>
+
+
+<div id="tourQrArea"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+let completedCount = 0;
+let currentStation = null;
+let currentDay = "montag";
+let dayProgress = JSON.parse(
+    localStorage.getItem("dayProgress")
+) || {
+    montag: [],
+    dienstag: [],
+    mittwoch: [],
+    donnerstag: [],
+    freitag: [],
+    endstrassen: []
+};
+let probeData = JSON.parse(
+    localStorage.getItem("probeData")
+) || {};
+/* ---------------------------------------------------------
+   Routen
+--------------------------------------------------------- */
+
+const routes = {
+    montag: [
+        { name:"Meldekopf", lat:51.691639, lon:7.099722, betrieb:"Syneqt", anlage:"Meldekopf", tel:"" },
+        { name:"Bau 844", lat:51.689565, lon:7.095635, betrieb:"Vestolit GmbH", anlage:"Chlorverteilung u. Entquickung", tel:"" ,hinweis:"Probekiste im Bau 9015-Kontrolprobe"},
+        { name:"Bau 870", lat:51.688305, lon:7.093348, betrieb:"Vestolit GmbH", anlage:"Saline/Chlorverdichter", tel:"9549731" },
+        { name:"Bau 758", lat:51.687525, lon:7.094704, betrieb:"Vestolit GmbH", anlage:"VC II/III Bisulfit", tel:"9549425" },
+        { name:"Bau 752", lat:51.687619, lon:7.095118, betrieb:"Vestolit GmbH", anlage:"VC II/III Stripper", tel:"9549860" },
+        { name:"Bau 739", lat:51.687818, lon:7.097994, betrieb:"Vestolit GmbH", anlage:"HCL-Gewinnung", tel:"9549215" },
+        { name:"Bau 732", lat:51.688502, lon:7.098751, betrieb:"Sasol", anlage:"Sulfierfabrik Grube Süd", tel:"2703" },
+        { name:"Bau 735D", lat:51.688156, lon:7.099784, betrieb:"EPP", anlage:"DDS - Destillation", tel:"4011" },
+        { name:"Bau 723", lat:51.688546, lon:7.100272, betrieb:"Vestolit GmbH", anlage:"Ethyl-Methylchloridanlage", tel:"9549215" },
+        { name:"Bau 536", lat:51.687650, lon:7.102334, betrieb:"Sasol", anlage:"FA - Grube Aminfabrik", tel:"5606" },
+        { name:"Bau 506", lat:51.687251, lon:7.103581, betrieb:"Sarpi", anlage:"Sonderverbrennung", tel:"4674" },
+        { name:"Bau 517", lat:51.686990, lon:7.102709, betrieb:"NEW", anlage:"Biodieselanlage", tel:"86555" },
+        { name:"Bau 730", lat:51.689146, lon:7.098375, betrieb:"Syneqt", anlage:"Schwefelsäure", tel:"5495" },
+        { name:"Bau 929", lat:51.690220, lon:7.098625, betrieb:"Vestolit GmbH", anlage:"Saline/Chlorverdichter", tel:"9549731" },
+    ],
+
+    dienstag: [
+        { name:"Meldekopf", lat:51.691639, lon:7.099722, betrieb:"Evonik", anlage:"Meldekopf", tel:"" },
+        { name:"Bau 119E", lat:51.682893, lon:7.104682, betrieb:"Sasol", anlage:"FA-Grube Glykolfabrik", tel:"5381" },
+        { name:"Bau 1020", lat:51.682751, lon:7.105278, betrieb:"Sasol", anlage:"THM Betrieb", tel:"5375" },
+        { name:"Bau 1019", lat:51.682223, lon:7.105664, betrieb:"Sasol", anlage:"FA Grube Alkylphenolfabrik", tel:"5775" },
+        { name:"Bau 1120", lat:51.681765, lon:7.106344, betrieb:"EOX", anlage:"Harzgrube", tel:"6931510" },
+        { name:"Bau 1214", lat:51.680663, lon:7.106554, betrieb:"Sasol", anlage:"FA - Grube EO-Fabrik", tel:"5520" },
+        { name:"Bau 1227", lat:51.680200, lon:7.105775, betrieb:"Evonik", anlage:"Anwendungstechnikum", tel:"" },
+        { name:"Bau 1129S", lat:51.680581, lon:7.105539, betrieb:"Vestolit GmbH", anlage:"Anwendungstechnikum", tel:"" },
+        { name:"Bau 1262", lat:51.679254, lon:7.098456, betrieb:"EVS", anlage:"Gebäude 1262 / 1266", tel:"4212" },
+        { name:"Bau 159", lat:51.681573, lon:7.098483, betrieb:"EIC", anlage:"Feinchemikalien - Betrieb", tel:"4538" },
+        { name:"Bau 152", lat:51.682171, lon:7.098488, betrieb:"EPP", anlage:"Technikum 152", tel:"6832" },
+        { name:"Bau 361", lat:51.682970, lon:7.094728, betrieb:"Sasol", anlage:"FA Grube HD - Hydrierung", tel:"6062" },
+        { name:"Bau 341", lat:51.683748, lon:7.099734, betrieb:"Sasol", anlage:"HDH - Destillation", tel:"6062" },
+        { name:"Bau 239", lat:51.683255, lon:7.100817, betrieb:"Evonik", anlage:"Kontaktfabrik", tel:"7901" },
+    ],
+
+    mittwoch: [
+        { name:"Meldekopf", lat:51.691639, lon:7.099722, betrieb:"Evonik", anlage:"Meldekopf", tel:"" },
+        { name:"798 R", lat:51.691412, lon:7.100479, betrieb:"OX", anlage:"Russwasser", tel:"" },
+        { name:"459", lat:51.684461, lon:7.097555, betrieb:"OX", anlage:"Weichmacherfabrik", tel:"4712" },
+        { name:"475", lat:51.683856, lon:7.094364, betrieb:"OX", anlage:"Carbonsäureanlage", tel:"6931511" },
+        { name:"384 B", lat:51.683025, lon:7.091409, betrieb:"EPP", anlage:"CDT", tel:"2334" },
+        { name:"577", lat:51.684272, lon:7.092682, betrieb:"EPP", anlage:"Vestamid", tel:"87702" },
+        { name:"584", lat:51.684848, lon:7.091545, betrieb:"EPP", anlage:"Kontipolanlage", tel:"19922" },
+        { name:"598", lat:51.684752, lon:7.088872, betrieb:"EPP", anlage:"KTK (N)", tel:"4660" },
+        { name:"692", lat:51.685302, lon:7.089391, betrieb:"OX", anlage:"Raffinat I/II - Tanklager", tel:"5570" },
+        { name:"580", lat:51.685500, lon:7.092263, betrieb:"EPP", anlage:"Laurinlactam", tel:"5156" },
+        { name:"562 A + B", lat:51.685879, lon:7.094680, betrieb:"Evonik", anlage:"Laurinlactam NEU", tel:"5290" },
+        { name:"560", lat:51.686587, lon:7.096066, betrieb:"ISP", anlage:"Acetylenanlage", tel:"9727" },
+        { name:"761", lat:51.686879, lon:7.094228, betrieb:"Evonik", anlage:"CDOM Anlage", tel:"2359" },
+        { name:"779", lat:51.686327, lon:7.091781, betrieb:"OX", anlage:"Raffinat I/II - Neuanlage", tel:"5570" },
+        { name:"783", lat:51.686229, lon:7.090142, betrieb:"OX", anlage:"Raffinat I/II - Anlage", tel:"5570" },
+        { name:"N 798", lat:51.686792, lon:7.088380, betrieb:"OX", anlage:"Synthesegas", tel:"86883" },
+        { name:"9516", lat:51.692205, lon:7.081790, betrieb:"Hilgenberg", anlage:"", tel:"" },
+    ],
+
+    donnerstag: [
+        { name:"Meldekopf", lat:51.691639, lon:7.099722, betrieb:"Evonik", anlage:"Meldekopf", tel:"" },
+        { name:"Bau 2820", lat:51.6866624, lon:7.0834256, betrieb:"Evonik", anlage:"KWDA", tel:"5484" },
+        { name:"Bau 2709", lat:51.6853376, lon:7.0873084, betrieb:"SDG", anlage:"NLP-Betrieb", tel:"4610" },
+        { name:"Bau 2620", lat:51.6848377, lon:7.0855701, betrieb:"SDG", anlage:"Bunatex", tel:"6574" },
+        { name:"Bau 2645", lat:51.6828303, lon:7.0798985, betrieb:"OX", anlage:"Butadienbetriebe", tel:"6297" },
+        { name:"Bau 2328", lat:51.680869, lon:7.083049, betrieb:"S.I.Q. Kunstharze", anlage:"Polyamino-Amid", tel:"19299" },
+        { name:"Bau 3250", lat:51.6755549, lon:7.0839201, betrieb:"ILS", anlage:"Hochregallager", tel:"4292" },
+        { name:"Bau 2215", lat:51.6801221, lon:7.0875003, betrieb:"Vestolit GmbH", anlage:"PVC-Abw. Reinigung", tel:"9549118" },
+        { name:"Bau 2222", lat:51.6806188, lon:7.0861953, betrieb:"EIC", anlage:"Zwischenprodukte", tel:"2412" },
+        { name:"Bau 2337", lat:51.6805144, lon:7.0852662, betrieb:"Sasol", anlage:"Marlipalfabrik", tel:"2637" },
+        { name:"Bau 2319", lat:51.6812015, lon:7.0869060, betrieb:"ECA", anlage:"Polyolefinanlage", tel:"2782" },
+        { name:"Bau 2302", lat:51.6818523, lon:7.0881460, betrieb:"OX", anlage:"Oxo-Anlage", tel:"6715" },
+        { name:"Bau 2304", lat:51.6818545, lon:7.0888627, betrieb:"OX", anlage:"2-PH-Anlage", tel:"6715" },
+        { name:"Bau 298", lat:51.6816582, lon:7.0901309, betrieb:"ECA", anlage:"Lackharzbetrieb", tel:"5460" },
+        { name:"Bau 282", lat:51.6817602, lon:7.0925133, betrieb:"Sasol", anlage:"Marlonfabrik", tel:"9071" },
+        { name:"Bau 181", lat:51.6801124, lon:7.0937287, betrieb:"Evonik", anlage:"Technikum", tel:"19436" },
+        { name:"Bau 1186", lat:51.6792387, lon:7.0946305, betrieb:"Evonik", anlage:"Ausbildung", tel:"" },
+	
+    ],
+
+    freitag: [
+        { name:"Meldekopf", lat:51.691639, lon:7.099722, betrieb:"Evonik", anlage:"Meldekopf", tel:"" },
+        { name:"Bau 9128", lat:51.6922152, lon:7.0998117, betrieb:"Evonik", anlage:"Hafenbetriebe", tel:"5340" },
+        { name:"Bau 9097", lat:51.689601, lon:7.089755, betrieb:"Evonik", anlage:"Fenton-Anlage", tel:"" },
+        { name:"Bau 985", lat:51.6878684, lon:7.0879964, betrieb:"AMG", anlage:"Acrylsäureanlage", tel:"6586" },
+        { name:"Bau 988", lat:51.6881224, lon:7.0875200, betrieb:"AMG", anlage:"Acrylsäureanlage", tel:"6586" },
+        { name:"Bau 981", lat:51.6882340, lon:7.0873860, betrieb:"AMG", anlage:"Acrylsäureanlage", tel:"6586" },
+        { name:"Bau 9079", lat:51.6903060, lon:7.0851390, betrieb:"Evonik", anlage:"Fenton-Anlage", tel:"" },
+        { name:"Bau 9196", lat:51.690332, lon:7.085957, betrieb:"ECA", anlage:"Buna-CB-Anlage", tel:"" },
+        { name:"Bau 1818", lat:51.6974719, lon:7.0944063, betrieb:"Evonik", anlage:"Brauchwasseraufbereitung", tel:"2820" },
+        { name:"Bau 1992", lat:51.6918125, lon:7.0850467, betrieb:"INEOS", anlage:"Entsalzungsbehälter zur Fenton-Anlage", tel:"" },
+        { name:"Bau 9708", lat:51.6915906, lon:7.0832055, betrieb:"ISP", anlage:"Butandiol-Anlage", tel:"2919" },
+        { name:"Bau 9605", lat:51.6910264, lon:7.0819588, betrieb:"Evonik", anlage:"KSV-Waschwasser", tel:"5741" },
+    ],
+
+    endstrassen: [
+        { name:"Meldekopf", lat:51.691639, lon:7.099722, betrieb:"Evonik", anlage:"Meldekopf", tel:"" },
+        { name:"Garage 900/20", lat:51.690515, lon:7.099929, betrieb:"", anlage:"", tel:"" },
+        { name:"Garage 900/40 Mitte/Ost", lat:51.689777, lon:7.096563, betrieb:"", anlage:"", tel:"" },
+        { name:"Garage 900/60", lat:51.688666, lon:7.093433, betrieb:"", anlage:"", tel:"" },
+        { name:"Garage 900/80", lat:51.688960, lon:7.092507, betrieb:"", anlage:"", tel:"" },
+        { name:"Garage 900/2000 Nord", lat:51.687654, lon:7.086138, betrieb:"", anlage:"", tel:"" },
+        { name:"Garage 900/2000 Süd", lat:51.687066, lon:7.086738, betrieb:"", anlage:"", tel:"" }
+    ]
+};
+
+/* ---------------------------------------------------------
+   Farben
+--------------------------------------------------------- */
+
+const dayColors = {
+    montag:"#22c55e",
+    dienstag:"#f97316",
+    mittwoch:"#eab308",
+    donnerstag:"#38bdf8",
+    freitag:"#ef4444",
+    endstrassen:"#a855f7"
+};
+
+/* ---------------------------------------------------------
+   Karte (ESRI Satellit)
+--------------------------------------------------------- */
+
+const map = L.map("map").setView([51.691639, 7.099722], 14);
+
+L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+        maxZoom: 19,
+        attribution: "Tiles © Esri"
+    }
+).addTo(map);
+
+let routeLayer = L.layerGroup().addTo(map);
+let searchLayer = L.layerGroup().addTo(map);
+let activeDays = new Set();
+
+/* ---------------------------------------------------------
+   Marker (hell, farbig, Luftlinie exakt)
+--------------------------------------------------------- */
+
+function createMarkerIcon(day) {
+    const color = dayColors[day];
+    return L.divIcon({
+        className: "",
+        html: `
+        <svg width="34" height="34" viewBox="0 0 34 34"
+             xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 3 C11 3 6 8 6 14 C6 21 17 32 17 32 C17 32 28 21 28 14 C28 8 23 3 17 3 Z"
+                  fill="${color}" stroke="white" stroke-width="2"/>
+            <circle cx="17" cy="14" r="4.5" fill="white"/>
+        </svg>
+        `,
+        iconSize: [34,34],
+        iconAnchor: [17,34] // Mitte unten → Linie sitzt exakt auf Marker
+    });
+}
+
+/* ---------------------------------------------------------
+   Popup hell & farbig
+--------------------------------------------------------- */
+function popupHTML(p, day) {
+
+    const navUrl =
+        "https://www.google.com/maps/dir/?api=1"
+        + "&destination=" + p.lat + "," + p.lon
+        + "&travelmode=driving";
+
+    if (p.name === "Meldekopf") {
+    return `
+        <div style="
+            padding:10px;
+            border-left:6px solid ${dayColors[day]};
+            background:white;
+            color:#111827;
+            font-size:13px;
+        ">
+            <b>${p.name}</b><br>
+        ${p.betrieb}<br>
+        ${p.anlage}<br><br>
+
+        <b>Startpunkt der Tour</b>
+        </div>
+    `;
+}
+
+    return `
+      <div style="
+    background:white;
+    color:#111827;
+    padding:18px;
+    border-radius:18px;
+    width:320px;
+">
+        
+<b>${p.name}</b><br>
+<span style="color:#4b5563;">${p.betrieb}</span><br>
+<span style="color:#6b7280;">${p.anlage}</span><br><br>
+
+
+<a href="tel:${p.tel}"
+   style="
+      display:inline-block;
+      padding:6px 10px;
+      background:#22c55e;
+      color:white;
+      text-decoration:none;
+      border-radius:6px;
+      font-weight:600;
+   ">
+   📞 Anrufen
+</a>
+
+<br><br>
+
+
+            <a href="${navUrl}"
+               target="_blank"
+               style="display:inline-block;padding:8px 12px;background:${dayColors[day]};color:white;text-decoration:none;border-radius:8px;font-weight:600;">
+               🧭 Navigation starten
+            </a>
+        </div>
+    `;
+}
+
+/* ---------------------------------------------------------
+   Distanz
+--------------------------------------------------------- */
+
+function dist(a, b) {
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lon - a.lon);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+
+    const h = Math.sin(dLat/2)**2 +
+              Math.cos(lat1)*Math.cos(lat2) *
+              Math.sin(dLon/2)**2;
+
+    return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
+}
+
+/* ---------------------------------------------------------
+   QR‑Code
+--------------------------------------------------------- */
+
+const meldekopf = { lat:51.691639, lon:7.099722 };
+
+function generateQR(day) {
+
+    const pts = routes[day];
+    if (!pts || pts.length < 2) return;
+
+    const mitte = Math.ceil(pts.length / 2);
+
+    const teil1 = pts.slice(0, mitte);
+    const teil2 = pts.slice(mitte - 1);
+
+    function createRouteUrl(points){
+
+        const destination =
+            `${points[points.length - 1].lat},${points[points.length - 1].lon}`;
+
+        const waypoints = points
+            .slice(0, points.length - 1)
+            .map(p => `${p.lat},${p.lon}`)
+            .join("|");
+
+        let url =
+            "https://www.google.com/maps/dir/?api=1" +
+            "&travelmode=driving" +
+            `&destination=${destination}`;
+
+        if (waypoints.length) {
+            url += `&waypoints=${waypoints}`;
+        }
+
+        return url;
+    }
+
+const qr1 =
+    "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" +
+    encodeURIComponent(createRouteUrl(teil1));
+
+const qr2 =
+    "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" +
+    encodeURIComponent(createRouteUrl(teil2));
+const start1 = teil1[0];
+const ende1 = teil1[teil1.length - 1];
+
+const start2 = teil2[0];
+const ende2 = teil2[teil2.length - 1];
+
+document.getElementById("qrSideArea").innerHTML = `
+<div id="qrHeader">
+    QR-Navigation
+</div>
+<div style="
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:15px;
+    min-height:100%;
+">
+<div style="
+    border-top:5px solid ${dayColors[day]};
+    border-left:1px solid #e5e7eb;
+    border-right:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+    border-radius:10px;
+    padding:5px;
+    width:290px;
+    background:white;
+    text-align:center;
+    box-shadow:0 6px 15px rgba(0,0,0,.06);
+">
+<h3>Route 1</h3>
+<b>Von:</b> ${start1.name}<br>
+<b>Bis:</b> ${ende1.name}<br><br>
+
+    <img src="${qr1}"
+         style="width:120px;height:120px;border-radius:8px;"> 
+
+</div>
+
+<div style="
+    border-top:5px solid ${dayColors[day]};
+    border-left:1px solid #e5e7eb;
+    border-right:1px solid #e5e7eb;
+    border-bottom:1px solid #e5e7eb;
+    border-radius:10px;
+    padding:5px;
+    width:290px;
+    background:white;
+    text-align:center;
+    box-shadow:0 6px 15px rgba(0,0,0,.06);
+">
+<h3>Route 2</h3>
+<b>Von:</b> ${start2.name}<br>
+<b>Bis:</b> ${ende2.name}<br><br>
+    <img src="${qr2}"
+         style="width:120px;height:120px;border-radius:8px;"> 
+
+</div>
+</div>
+
+
+`;
+} 
+
+/* ---------------------------------------------------------
+   Tabelle
+--------------------------------------------------------- */
+
+function hexToRgba(hex, alpha) {
+    hex = hex.replace("#","");
+    const r = parseInt(hex.substring(0,2),16);
+    const g = parseInt(hex.substring(2,4),16);
+    const b = parseInt(hex.substring(4,6),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+}
+function updateStats(day){
+
+    const pts = routes[day];
+    if(!pts || pts.length < 2) return;
+
+    document.getElementById("stationCount").textContent =
+        pts.length - 1;
+
+    let total = 0;
+
+    for(let i = 0; i < pts.length - 1; i++){
+        total += dist(pts[i], pts[i + 1]);
+    }
+
+    document.getElementById("distanceTotal").textContent =
+        (total / 1000).toFixed(1) + " km";
+
+  const driveTime = total / 416.67; // 25 km/h
+
+const stopTime = (pts.length - 1) * 10; // 10 Min pro Station
+
+const preparationTime =
+    day === "endstrassen" ? 0 : 30;
+
+const breakTime =
+    day === "endstrassen" ? 0 : 30;
+
+const totalTime = Math.round(
+    driveTime +
+    stopTime +
+    preparationTime +
+    breakTime
+);
+
+const h = Math.floor(totalTime / 60);
+const m = totalTime % 60;
+
+document.getElementById("tourDuration").textContent =
+    h > 0
+        ? `${h} h ${m} min`
+        : `${m} min`;
+
+    document.getElementById("tourProgress").textContent =
+        "0 / " + (pts.length - 1);
+}
+function updateTable(day) {
+if (dayProgress[currentDay]) {
+
+    dayProgress[currentDay].forEach(station => {
+
+        const cb = document.querySelector(
+            `.statusCheck[data-bau="${station}"]`
+        );
+
+        if (cb) {
+            cb.checked = true;
+        }
+
+    });
+
+}
+completedCount = dayProgress[currentDay].length;
+
+const totalStations = routes[currentDay].length - 1;
+
+document.getElementById("tourProgress").textContent =
+    completedCount + " / " + totalStations;
+    const tbody = document.querySelector("#distTable tbody");
+    tbody.innerHTML = "";	
+    let totalDist = 0;
+
+    const pts = routes[day];
+
+    
+   if (!pts || pts.length < 2) {
+
+  const totalDistEl = document.getElementById("totalDist");
+
+if (totalDistEl) {
+    totalDistEl.textContent = Math.round(totalDist);
+}
+
+    return;
+}
+
+    const color = dayColors[day];
+    const bg = hexToRgba(color, 0.12);
+
+
+
+    for (let i = 0; i < pts.length - 1; i++) {
+	const a = pts[i];
+        const b = pts[i+1];
+        const d = dist(a, b);
+
+        totalDist += d;
+
+       const tr = document.createElement("tr");
+
+const isDone = dayProgress[currentDay].includes(b.name);
+
+tr.innerHTML = `
+ <td>
+    <input type="checkbox"
+class="statusCheck"
+data-bau="${b.name}"
+${isDone ? "checked" : ""}
+disabled>
+</td>
+    <td>${b.name}</td>
+    <td>${b.betrieb}</td>
+    <td>${b.anlage}</td>
+    <td>${b.tel || "-"}</td>
+`;
+        tr.style.backgroundColor = bg;
+        tr.style.borderLeft = "none";
+tbody.appendChild(tr);
+const detailRow = document.createElement("tr");
+
+detailRow.className = "detailRow";
+detailRow.style.display = isDone ? "table-row" : "none";
+
+detailRow.innerHTML = `
+<td colspan="5">
+
+<div class="detailGrid">
+
+<div>
+<label>Position</label><br>
+<select class="probeField"
+        data-key="${b.name}_position">
+
+${Array.from({length:25}, (_,i) =>
+`<option>${i+1}</option>`
+).join("")}
+</select>
+</div>
+
+<div>
+<label>Leer</label><br>
+<select class="probeField"
+        data-key="${b.name}_leer">
+${Array.from({length:15}, (_,i) =>
+`<option>${i}</option>`
+).join("")}
+</select>
+</div>
+
+<div>
+<label><25%</label><br>
+<select class="probeField"
+        data-key="${b.name}_unter25">
+${Array.from({length:15}, (_,i) =>
+`<option>${i}</option>`
+).join("")}
+</select>
+</div>
+
+<div>
+<label>25% - 50%</label><br>
+<select class="probeField"
+        data-key="${b.name}_25bis50">
+${Array.from({length:15}, (_,i) =>
+`<option>${i}</option>`
+).join("")}
+</select>
+</div>
+
+<div>
+<label>Voll</label><br>
+<select class="probeField"
+        data-key="${b.name}_voll">
+${Array.from({length:15}, (_,i) =>
+`<option>${i}</option>`
+).join("")}
+</select>
+</div>
+<div>
+<label>Kontrollprobe Betrieb</label><br>
+<select class="probeField"
+        data-key="${b.name}_kontrollprobe">
+
+<option value="">-</option>
+<option>Ja</option>
+<option>Nein</option>
+
+</select>
+</div>
+<div>
+<label>Sonstiges</label><br>
+<select class="probeField"
+        data-key="${b.name}_sonstiges">
+
+<option value="">-</option>
+<option>Handproben</option>
+<option>Momentprobe</option>
+
+</select>
+</div>
+
+
+</div>
+
+</td>
+`;
+
+tbody.appendChild(tr);
+tbody.appendChild(detailRow);
+detailRow.querySelectorAll(".probeField").forEach(field => {
+
+    const key = field.dataset.key;
+
+    if (probeData[key] !== undefined) {
+        field.value = probeData[key];
+    }
+
+    field.addEventListener("change", () => {
+
+        probeData[key] = field.value;
+
+        localStorage.setItem(
+            "probeData",
+            JSON.stringify(probeData)
+        );
+
+    });
+
+});
+
+const checkbox = tr.querySelector(".statusCheck");
+console.log(checkbox.dataset.bau);
+checkbox.addEventListener("change", () => 
+{
+
+    if (checkbox.checked) {
+        completedCount++;
+    } else {
+        completedCount--;
+    }
+
+    const totalStations = routes[currentDay].length - 1;
+
+    document.getElementById("tourProgress").textContent =
+        completedCount + " / " + totalStations;
+
+});
+    }
+
+const totalDistEl = document.getElementById("totalDist");
+
+if (totalDistEl) {
+    totalDistEl.textContent = Math.round(total);
+}
+}
+function updateTableAll() {
+    const tbody = document.querySelector("#distTable tbody");
+    tbody.innerHTML = "";
+    let total = 0;
+
+    activeDays.forEach(day => {
+        const pts = routes[day];
+        console.log("Aktiver Tag:", day);
+        if (!pts || pts.length < 2) return;
+        const half = Math.ceil((pts.length - 1) / 2);
+        const color = dayColors[day];
+        const bg = hexToRgba(color, 0.12);
+
+        for (let i = 0; i < pts.length - 1; i++) {
+            const a = pts[i];
+            const b = pts[i+1];
+            const d = dist(a, b);
+            total += d;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+    <td>${day.toUpperCase()}</td>
+    <td>${b.name}</td>
+    <td>${b.betrieb}</td>
+    <td>${b.anlage}</td>
+    <td>${b.tel || "-"}</td>
+          `;
+            tr.style.backgroundColor = bg;
+            tr.style.borderLeft = `3px solid ${color}`;
+tbody.appendChild(tr);
+
+        }
+    });
+
+const totalDistEl = document.getElementById("totalDist");
+
+if (totalDistEl) {
+    totalDistEl.textContent = Math.round(totalDist);
+}
+
+}
+/* ---------------------------------------------------------
+   Linien zeichnen
+--------------------------------------------------------- */
+
+function updateStationCard(p, day) {
+
+    currentStation = p.name;
+
+    document.getElementById("stationName").innerHTML =
+        p.name + ' <span id="hintBtn">⚠ Hinweise anklicken</span>';
+    p.name + ' <span id="hintBtn">⚠ Hinweise anklicken</span>';
+    console.log("Aktuelle Station:", currentStation);
+    document.getElementById("stationCall").style.display = "block";
+    document.getElementById("stationNavigation").style.display = "block";
+    document.getElementById("stationQr").style.display = "block";
+    document.getElementById("completeBtn").style.display = "block";
+    document.getElementById("completeBtn").textContent =
+    "✅ Probe gezogen";
+const checkbox = document.querySelector(
+    `.statusCheck[data-bau="${p.name}"]`
+);
+
+if (checkbox && checkbox.checked) {
+
+    document.getElementById("completeBtn").textContent =
+        "✅ Bau erledigt";
+
+}
+    document.getElementById("stationHint").style.display = "none";
+    document.getElementById("stationName").textContent =p.name || "-";
+if (p.name) {
+
+    document.getElementById("stationHint").textContent =
+        "Nutze die Suche oder wähle einen Marker auf der Karte.";
+
+    document.getElementById("stationHint").style.display = "none";
+
+} else {
+
+    document.getElementById("stationHint").textContent =
+        "Nutze die Suche oder wähle einen Marker auf der Karte.";
+
+    document.getElementById("stationHint").style.display = "block";
+}
+if (p.hinweis) {
+    document.getElementById("hintBtn").style.display = "inline";
+} else {
+    document.getElementById("hintBtn").style.display = "none";
+}
+document.getElementById("hintBtn").onclick = () => {
+
+    if (
+        document.getElementById("stationHint").style.display === "block"
+    ) {
+
+        document.getElementById("stationHint").style.display = "none";
+
+    } else {
+
+        document.getElementById("stationHint").textContent =
+            p.hinweis;
+
+        document.getElementById("stationHint").style.display = "block";
+    }
+
+};
+
+    document.getElementById("stationBetrieb").textContent =
+        p.betrieb || "-";
+
+    document.getElementById("stationAnlage").textContent =
+        p.anlage || "-";
+
+    document.getElementById("stationTelefon").textContent =
+        "📞 " + (p.tel || "-");
+
+document.getElementById("stationNavigation").href =
+    "https://www.google.com/maps/dir/?api=1&destination="
+    + p.lat + "," + p.lon +
+    "&travelmode=driving";
+document.getElementById("stationName").style.color =
+    dayColors[day];
+
+document.getElementById("stationNavigation").style.backgroundColor =
+    dayColors[day];
+document.getElementById("stationCall").href =
+    "tel:" + (p.tel || "");
+
+document.getElementById("stationCall").style.backgroundColor =
+    dayColors[day];
+document.getElementById("stationQr").src =
+    "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" +
+    encodeURIComponent(
+        "https://www.google.com/maps/dir/?api=1&destination="
+        + p.lat + "," + p.lon +
+        "&travelmode=driving"
+);
+}
+
+
+function drawDay(day) {
+    currentDay = day;
+document.getElementById("stationName").textContent = "";
+
+document.getElementById("stationHint").textContent =
+    "Nutze die Suche oder wähle einen Marker auf der Karte.";
+
+document.getElementById("stationHint").style.display = "block";
+
+document.getElementById("hintBtn").style.display = "none";
+   if (day === "alle") {
+document.getElementById("sideArea").style.width = "380px";
+document.querySelectorAll(".statCard").forEach(card => {
+    card.style.borderTop = "4px solid #111827";
+});
+document.getElementById("contentArea").style.borderTop =
+    "5px solid #111827";
+    document.documentElement.style.setProperty(
+        "--dayColor",
+        "#22c55e"
+    );
+    document.getElementById("resetProgressBtn").style.borderTop =
+    "5px solid #111827";
+    document.getElementById("sideArea").style.display = "none";
+    document.getElementById("qrSideArea").style.display = "none";
+
+} else {
+document.getElementById("sideArea").style.width = "300px";
+    document.documentElement.style.setProperty(
+        "--dayColor",
+        dayColors[day]
+    );
+document.querySelectorAll(".statCard").forEach(card => {
+    card.style.borderTop = "4px solid " + dayColors[day];
+});
+
+document.getElementById("contentArea").style.borderTop =
+    "5px solid " + dayColors[day];
+
+document.getElementById("resetProgressBtn").style.borderTop =
+    "5px solid " + dayColors[day];
+    document.getElementById("sideArea").style.display = "flex";
+    document.getElementById("qrSideArea").style.display = "flex";
+}
+    routeLayer.clearLayers();
+    searchLayer.clearLayers();
+    document.getElementById("tourHeader").textContent =
+    day === "alle"
+        ? "ALLE TOUREN"
+        :  day.toUpperCase();
+    document.getElementById("stationName").textContent =
+        "Keine Station ausgewählt";
+    document.getElementById("stationHint").style.display = "block";
+    document.getElementById("stationBetrieb").textContent = "";
+    document.getElementById("stationAnlage").textContent = "";
+    document.getElementById("stationTelefon").textContent = "";
+
+    document.getElementById("stationCall").style.display = "none";
+    document.getElementById("stationNavigation").style.display = "none";
+    document.getElementById("stationQr").style.display = "none";
+    document.getElementById("completeBtn").style.display = "none";
+
+ if (day === "alle") {
+
+    document.getElementById("sideArea").style.display = "none";
+    document.getElementById("qrSideArea").style.display = "none";
+    activeDays.clear();
+
+    ["montag","dienstag","mittwoch","donnerstag","freitag","endstrassen"]
+        .forEach(d => activeDays.add(d));
+
+    document.getElementById("legend").style.display = "block";
+
+    document.querySelectorAll(".legendItem").forEach(li => {
+        li.classList.add("active");
+    });
+
+    
+
+    drawAllSelectedDays();
+
+    return;
+}
+
+document.getElementById("sideArea").style.display = "flex";
+document.getElementById("qrSideArea").style.display = "flex";
+    document.getElementById("legend").style.display = "none";
+
+    const pts = routes[day];
+    if (!pts || pts.length === 0) return;
+
+    pts.forEach((p,index) => {
+
+        let next;
+        if(index===0){
+            next = pts[1];
+        } else if(index < pts.length-1){
+            next = pts[index+1];
+        } else {
+            next = pts[0];
+        }
+
+const navUrl =
+    "https://www.google.com/maps/dir/?api=1"
+    + "&destination=" + p.lat + "," + p.lon
+    + "&travelmode=driving";
+
+const qrUrl =
+    "https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=" +
+    encodeURIComponent(navUrl);
+
+const popup = `
+<div style="
+    background:white;
+    color:#111827;
+    padding:10px;
+    border-radius:10px;
+    width:195px;
+">
+
+    <div style="
+        font-size:22px;
+        font-weight:700;
+        color:${dayColors[day]};
+        margin-bottom:4px;
+    ">
+        ● ${p.name}
+    </div>
+
+    <div style="
+        font-size:18px;
+        font-weight:600;
+        margin-bottom:4px;
+    ">
+        ${p.betrieb}
+    </div>
+
+    <div style="
+        font-size:14px;
+        color:#6b7280;
+    ">
+        ${p.anlage}
+    </div>
+
+</div>`;
+const marker = L.marker(
+    [p.lat, p.lon],
+    { icon:createMarkerIcon(day) }
+)
+.addTo(routeLayer)
+.bindPopup(popup)
+.on("click", function() {
+    updateStationCard(p, day);
+});
+
+p.marker = marker;
+
+});
+
+    const latlngs = pts.map(p => [p.lat, p.lon]);
+
+L.polyline(latlngs, {
+    color: dayColors[day],
+    weight: 4,
+    opacity: 0.95,
+    renderer: L.canvas(),
+    interactive: false
+}).addTo(routeLayer);
+
+L.polyline(latlngs, {
+    color: dayColors[day],
+    weight: 10,
+    opacity: 0.25,
+    renderer: L.canvas(),
+    interactive: false
+}).addTo(routeLayer);
+
+map.fitBounds(latlngs, {
+    padding:[40,40]
+});
+
+    updateTable(day);
+
+generateQR(day);
+
+updateStats(day);
+
+completedCount = dayProgress[currentDay].length;
+
+const totalStations = routes[currentDay].length - 1;
+
+document.getElementById("tourProgress").textContent =
+    completedCount + " / " + totalStations;
+
+document.documentElement.style.setProperty(
+    "--dayColor",
+    day === "alle"
+        ? "#6b7280"
+        : dayColors[day]
+);
+
+document.getElementById("tourHeader").textContent =
+    day === "alle"
+        ? "ALLE"
+        : day.toUpperCase();
+
+}
+
+/* ---------------------------------------------------------
+   Multi-Tag
+--------------------------------------------------------- */
+
+function drawAllSelectedDays() {
+    routeLayer.clearLayers();
+    searchLayer.clearLayers();
+
+    activeDays.forEach(day => {
+        const pts = routes[day];
+        if (!pts || pts.length === 0) return;
+
+        pts.forEach(p => {
+  const marker = L.marker(
+    [p.lat, p.lon],
+    { icon:createMarkerIcon(day) }
+)
+.addTo(routeLayer)
+.bindPopup(p.name)
+.on("click", function() {
+    updateStationCard(p, day);
+});
+
+p.marker = marker;
+        });
+
+        const latlngs = pts.map(p => [p.lat, p.lon]);
+
+        L.polyline(latlngs, {
+            color: dayColors[day],
+            weight: 3,
+            dashArray: "6 6",
+            opacity: 0.95,
+            renderer: L.canvas(),
+            interactive: false
+        }).addTo(routeLayer);
+
+        L.polyline(latlngs, {
+            color: dayColors[day],
+            weight: 8,
+            opacity: 0.25,
+            renderer: L.canvas(),
+            interactive: false
+        }).addTo(routeLayer);
+    });
+
+    const allPoints = [...activeDays]
+        .flatMap(day => routes[day] || [])
+        .map(p => [p.lat, p.lon]);
+
+    if (allPoints.length > 0) {
+        map.fitBounds(allPoints, { padding:[40,40] });
+    }
+
+    updateTableAll();
+let totalStations = 0;
+let totalCompleted = 0;
+activeDays.forEach(day => {
+
+    totalStations += routes[day].length - 1;
+
+    totalCompleted += dayProgress[day].length;
+
+});
+
+document.getElementById("stationCount").textContent =
+    totalStations;
+document.getElementById("tourProgress").textContent =
+    totalCompleted + " / " + totalStations;
+let totalDistance = 0;
+
+activeDays.forEach(day => {
+
+    const pts = routes[day];
+
+    for (let i = 0; i < pts.length - 1; i++) {
+        totalDistance += dist(pts[i], pts[i + 1]);
+    }
+
+});
+
+document.getElementById("distanceTotal").textContent =
+    (totalDistance / 1000).toFixed(1) + " km";
+const minutes = Math.round(totalStations * 15);
+
+const hours = Math.floor(minutes / 60);
+const mins = minutes % 60;
+
+document.getElementById("tourDuration").textContent =
+    hours + " h " + mins + " min";
+
+}
+
+/* ---------------------------------------------------------
+   Buttons
+--------------------------------------------------------- */
+
+document.querySelectorAll(".dayButton").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".dayButton").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        drawDay(btn.dataset.day);
+    });
+});
+
+/* ---------------------------------------------------------
+   Legende
+--------------------------------------------------------- */
+
+document.querySelectorAll(".legendItem").forEach(item => {
+    item.addEventListener("click", () => {
+        const day = item.dataset.day;
+        if (activeDays.has(day)) {
+            activeDays.delete(day);
+            item.classList.remove("active");
+        } else {
+            activeDays.add(day);
+            item.classList.add("active");
+        }
+        drawAllSelectedDays();
+    });
+});
+
+/* ---------------------------------------------------------
+   Suche
+--------------------------------------------------------- */
+
+const searchBox = document.getElementById("searchBox");
+const searchResults = document.getElementById("searchResults");
+
+searchBox.addEventListener("input", function () {
+    const q = this.value.toLowerCase().trim();
+    
+    searchResults.innerHTML = "";
+    searchResults.style.display = "none";
+    searchLayer.clearLayers();
+
+    if (q.length < 2) {
+        const activeBtn = document.querySelector(".dayButton.active");
+        const day = activeBtn ? activeBtn.dataset.day : "montag";
+        if (day === "alle") drawAllSelectedDays();
+        else drawDay(day);
+        return;
+    }
+
+    let results = [];
+
+    Object.entries(routes).forEach(([tag, pts]) => {
+        pts.forEach(p => {
+            const text = `${p.name} ${p.anlage} ${p.betrieb} ${p.tel}`.toLowerCase();
+            if (text.includes(q)) {
+    p.tag = tag;
+    results.push(p);
+}
+        });
+    });
+
+    if (results.length === 0) return;
+
+    searchLayer.clearLayers();
+
+    results.forEach(p => {
+
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+        <strong>${p.name}</strong>
+        <span style="
+            float:right;
+            color:${dayColors[p.tag]};
+            font-weight:700;
+        ">
+            ${p.tag.toUpperCase()}
+        </span>
+        <br>
+
+        <span style="
+            color:#6b7280;
+            font-size:12px;
+        ">
+            ${p.betrieb}
+        </span>
+
+        <br>
+
+        <span style="
+            font-size:12px;
+        ">
+            ${p.anlage}
+        </span>
+    `;
+
+div.addEventListener("click", () => {
+    drawDay(p.tag);
+
+    setTimeout(() => {
+
+        map.flyTo([p.lat, p.lon], 18);
+
+        updateStationCard(p, p.tag);
+
+        if (p.marker) {
+            p.marker.openPopup();
+        }
+
+        searchLayer.clearLayers();
+
+        const highlight = L.circleMarker(
+            [p.lat, p.lon],
+            {
+                radius: 28,
+                color: dayColors[p.tag],
+                fillColor: dayColors[p.tag],
+                fillOpacity: 0.20,
+                weight: 4
+            }
+        ).addTo(searchLayer);
+
+        let visible = true;
+
+        const blink = setInterval(() => {
+            highlight.setStyle({
+                opacity: visible ? 0 : 1,
+                fillOpacity: visible ? 0 : 0.20
+            });
+
+            visible = !visible;
+        }, 500);
+
+        setTimeout(() => {
+            clearInterval(blink);
+            searchLayer.clearLayers();
+        }, 5000);
+
+    }, 300);
+
+    searchBox.value = "";
+    searchResults.style.display = "none";
+});
+
+    searchResults.appendChild(div);
+
+});
+
+    searchResults.style.display = "block";
+});
+
+/* ---------------------------------------------------------
+   Start: Montag
+--------------------------------------------------------- */
+document.getElementById("stationName").textContent =
+    "Keine Station ausgewählt";
+
+document.getElementById("stationBetrieb").textContent = "";
+document.getElementById("stationAnlage").textContent = "";
+document.getElementById("stationTelefon").textContent = "";
+
+document.getElementById("stationCall").style.display = "none";
+document.getElementById("stationNavigation").style.display = "none";
+document.getElementById("stationQr").style.display = "none";
+document.getElementById("completeBtn").addEventListener("click", () => {
+
+    const checkbox = document.querySelector(
+        `.statusCheck[data-bau="${currentStation}"]`
+    );
+
+    if (!checkbox) return;
+
+    if (!checkbox.checked) {
+
+        checkbox.checked = true;
+const detailRow =
+    checkbox.closest("tr").nextElementSibling;
+
+if (detailRow) {
+    detailRow.style.display = "table-row";
+}
+if (!dayProgress[currentDay].includes(currentStation)) {
+    dayProgress[currentDay].push(currentStation);
+}
+localStorage.setItem(
+    "dayProgress",
+    JSON.stringify(dayProgress)
+);
+console.log(dayProgress);
+        document.getElementById("completeBtn").textContent =
+    "✅ Bau erledigt";
+
+        completedCount++;
+
+        const totalStations = routes[currentDay].length - 1;
+
+        document.getElementById("tourProgress").textContent =
+            completedCount + " / " + totalStations;
+    }
+
+});
+let resetAnimation;
+const resetFill = document.getElementById("resetFill");
+let resetTimer;
+
+const resetBtn = document.getElementById("resetProgressBtn");
+
+resetBtn.addEventListener("mousedown", () => {
+resetBtn.addEventListener("touchstart", () => {
+
+    clearInterval(resetAnimation);
+
+    resetFill.style.width = "0%";
+
+    let progress = 0;
+
+    resetAnimation = setInterval(() => {
+
+        progress += 2.5;
+
+        resetFill.style.width = progress + "%";
+
+    }, 50);
+
+    resetTimer = setTimeout(() => {
+
+        completedCount = 0;
+
+        dayProgress[currentDay] = [];
+
+        probeData = {};
+
+        localStorage.removeItem("probeData");
+
+        localStorage.setItem(
+            "dayProgress",
+            JSON.stringify(dayProgress)
+        );
+
+        document.querySelectorAll(".statusCheck").forEach(cb => {
+            cb.checked = false;
+        });
+
+        document.querySelectorAll(".detailRow").forEach(row => {
+            row.style.display = "none";
+        });
+
+        const totalStations = routes[currentDay].length - 1;
+
+        document.getElementById("tourProgress").textContent =
+            "0 / " + totalStations;
+
+        drawDay(currentDay);
+
+    }, 2000);
+
+});
+``
+clearInterval(resetAnimation);
+
+resetFill.style.width = "0%";
+
+    resetFill.style.width = "0%";
+
+    let progress = 0;
+
+    resetAnimation = setInterval(() => {
+
+        progress += 2.5;
+
+        resetFill.style.width = progress + "%";
+
+    }, 50);
+
+    resetTimer = setTimeout(() => {
+
+        completedCount = 0;
+
+        dayProgress[currentDay] = [];
+
+        probeData = {};
+
+        localStorage.removeItem("probeData");
+
+        localStorage.setItem(
+            "dayProgress",
+            JSON.stringify(dayProgress)
+        );
+
+        document.querySelectorAll(".statusCheck").forEach(cb => {
+            cb.checked = false;
+        });
+
+        document.querySelectorAll(".detailRow").forEach(row => {
+            row.style.display = "none";
+        });
+
+        const totalStations = routes[currentDay].length - 1;
+
+        document.getElementById("tourProgress").textContent =
+            "0 / " + totalStations;
+
+        drawDay(currentDay);
+
+    }, 2000);
+
+});
+
+resetBtn.addEventListener("mouseup", () => {
+resetBtn.addEventListener("touchend", () => {
+
+    clearTimeout(resetTimer);
+    clearInterval(resetAnimation);
+
+    resetFill.style.width = "0%";
+
+});
+    clearTimeout(resetTimer);
+    clearInterval(resetAnimation);
+
+    resetFill.style.width = "0%";
+
+});
+
+resetBtn.addEventListener("mouseleave", () => {
+    clearTimeout(resetTimer);
+});
+async function loadWeather() {
+
+    try {
+
+const response = await fetch(
+    "https://api.open-meteo.com/v1/forecast?latitude=51.66&longitude=7.09&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,wind_speed_10m,cloud_cover,wind_direction_10m"
+);
+        const data = await response.json();
+
+       const temp = Math.round(data.current.temperature_2m);
+const wind = Math.round(data.current.wind_speed_10m);
+const humidity = data.current.relative_humidity_2m;
+const rain = data.current.precipitation;
+const felt = Math.round(data.current.apparent_temperature);
+const clouds = data.current.cloud_cover;
+const windDirection =
+    data.current.wind_direction_10m;
+let weatherText = "Leicht bewölkt";
+
+if (clouds < 20) {
+    weatherText = "Sonnig";
+}
+
+if (clouds >= 20 && clouds < 60) {
+    weatherText = "Leicht bewölkt";
+}
+
+if (clouds >= 60) {
+    weatherText = "Stark bewölkt";
+}
+
+if (rain > 0) {
+    weatherText = "Regenschauer";
+}
+
+if (rain > 1) {
+    weatherText = "Regen";
+}
+let icon = "🌤️";
+
+const weatherOverlay =
+    document.getElementById("weatherOverlay");
+
+weatherOverlay.style.borderTop =
+    "5px solid #38bdf8";
+
+if (rain > 0) {
+    icon = "🌧️";
+
+    weatherOverlay.style.borderTop =
+        "5px solid #2563eb";
+}
+
+if (wind > 30) {
+    icon = "💨";
+
+    weatherOverlay.style.borderTop =
+        "5px solid #6b7280";
+}
+
+if (temp >= 30) {
+    icon = "☀️";
+
+    weatherOverlay.style.borderTop =
+        "5px solid #f59e0b";
+}
+const now = new Date();
+
+const datum = now.toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+});
+
+const uhrzeit = now.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit"
+});
+document.getElementById("weatherBox").innerHTML = `
+<div style="
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:4px;
+">
+    Chemiepark Marl
+</div>
+
+<div style="
+    font-size:11px;
+    color:#6b7280;
+    margin-bottom:12px;
+">
+    ${datum} • ${uhrzeit} Uhr
+</div>
+<div style="
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin-bottom:12px;
+">
+
+ 
+</div>
+<div style="font-size:42px;">
+    ${icon}
+</div>
+
+<div style="
+    font-size:38px;
+    font-weight:700;
+    line-height:1;
+">
+    ${temp}°C
+</div>
+<div style="
+    font-size:13px;
+    color:#6b7280;
+    font-weight:600;
+    margin-top:5px;
+">
+    Gefühlt ${felt}°C
+</div>
+<div style="
+    font-size:13px;
+    color:#6b7280;
+    font-weight:600;
+    margin-top:3px;
+">
+    ${weatherText}
+</div>
+<hr style="
+    border:none;
+    border-top:1px solid #e5e7eb;
+    margin:12px 0;
+">
+<div style="
+    text-align:center;
+    font-size:11px;
+    color:#6b7280;
+    margin-bottom:8px;
+">
+    Windrichtung
+</div>
+
+<div style="
+    width:60px;
+    height:60px;
+    border:2px solid #d1d5db;
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    margin:0 auto 10px auto;
+">
+    <div style="
+        font-size:28px;
+        transform:rotate(${windDirection}deg);
+        transition:transform 1s ease;
+    ">
+        ↑
+    </div>
+
+</div>
+<div style="
+    border-top:1px solid #e5e7eb;
+    margin-top:10px;
+    padding-top:10px;
+    font-size:12px;
+    line-height:1.8;
+">
+
+💨 Wind: <b>${wind} km/h</b><br>
+
+💧 Luftfeuchte: <b>${humidity}%</b><br>
+
+☁️ Bewölkung: <b>${clouds}%</b><br>
+
+🌧️ Niederschlag: <b>${rain} mm</b>
+
+</div>
+
+
+
+`;
+
+
+    } catch (e) {
+
+        document.getElementById("weatherBox").innerHTML =
+            "⚠️ Wetter nicht verfügbar";
+    }
+}
+
+loadWeather();
+
+setInterval(() => {
+    loadWeather();
+}, 60000);
+document.querySelector('.dayButton[data-day="montag"]').classList.add("active");
+drawDay("montag");
+</script>
+</body>
+</html>
+
